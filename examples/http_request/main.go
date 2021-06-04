@@ -6,7 +6,7 @@ import (
 	"io/ioutil"
 	"net/http"
 
-	"github.com/chebyrash/promise"
+	"github.com/elprans/go-promise"
 )
 
 func parseJSON(data []byte) *promise.Promise {
@@ -41,9 +41,9 @@ func main() {
 
 	// Parse JSON body in async manner
 	parsed, err := requestPromise.
-		Then(func(data promise.Any) promise.Any {
+		Then(func(data promise.Any) (promise.Any, error) {
 			// This can be a promise, it will automatically flatten
-			return parseJSON(data.([]byte))
+			return parseJSON(data.([]byte)), nil
 		}).Await()
 
 	if err != nil {

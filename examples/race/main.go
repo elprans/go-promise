@@ -3,7 +3,7 @@ package main
 import (
 	"fmt"
 
-	"github.com/chebyrash/promise"
+	"github.com/elprans/go-promise"
 )
 
 func main() {

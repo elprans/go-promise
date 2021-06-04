@@ -23,18 +23,37 @@ func TestPromise_Then(t *testing.T) {
 	})
 
 	promise.
-		Then(func(data Any) Any {
-			return data.(int) + 1
+		Then(func(data Any) (Any, error) {
+			return data.(int) + 1, nil
 		}).
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			if data.(int) != 3 {
 				t.Error("Result doesn't propagate")
 			}
-			return nil
+			return data, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			t.Error("Catch triggered in .Then test")
-			return nil
+			return nil, err
+		})
+
+	promise.Await()
+}
+
+func TestPromise_ThenError(t *testing.T) {
+	var promise = New(func(resolve func(Any), reject func(error)) {
+		resolve(1 + 1)
+	})
+
+	promise.
+		Then(func(data Any) (Any, error) {
+			return nil, errors.New("error in .Then handler")
+		}).
+		Catch(func(err error) (Any, error) {
+			if err.Error() != "error in .Then handler" {
+				t.Error("Error from .Then handler didn't propagate")
+			}
+			return nil, err
 		})
 
 	promise.Await()
@@ -48,15 +67,15 @@ func TestPromise_ThenNested(t *testing.T) {
 	})
 
 	promise.
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			if data.(string) != "Hello, World" {
 				t.Error("Resolved promise doesn't flatten")
 			}
-			return nil
+			return data, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			t.Error("Catch triggered in .Then test")
-			return nil
+			return nil, err
 		})
 
 	promise.Await()
@@ -68,25 +87,25 @@ func TestPromise_Catch(t *testing.T) {
 	})
 
 	promise.
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			t.Error("Then 1 triggered in .Catch test")
-			return nil
+			return data, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			if err.Error() == "very serious err" {
-				return errors.New("dealing with err at this stage")
+				return nil, errors.New("dealing with err at this stage")
 			}
-			return err
+			return nil, err
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			if err.Error() != "dealing with err at this stage" {
 				t.Error("Error doesn't propagate")
 			}
-			return err
+			return nil, err
 		}).
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			t.Error("Then 2 triggered in .Catch test")
-			return nil
+			return data, nil
 		})
 
 	promise.Await()
@@ -100,15 +119,37 @@ func TestPromise_CatchNested(t *testing.T) {
 	})
 
 	promise.
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			t.Error("Then triggered in .Catch test")
-			return nil
+			return data, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			if err.Error() != "nested fail" {
 				t.Error("Rejected promise doesn't flatten")
 			}
-			return nil
+			return nil, err
+		})
+
+	promise.Await()
+}
+
+func TestPromise_CatchRecovers(t *testing.T) {
+	var promise = New(func(resolve func(Any), reject func(error)) {
+		reject(errors.New("error in promise"))
+	})
+
+	promise.
+		Catch(func(err error) (Any, error) {
+			if err.Error() != "error in promise" {
+				t.Error("Promise didn't raise")
+			}
+			return 3, nil
+		}).
+		Then(func(data Any) (Any, error) {
+			if data.(int) != 3 {
+				t.Error("Catch didn't recover")
+			}
+			return nil, nil
 		})
 
 	promise.Await()
@@ -120,9 +161,9 @@ func TestPromise_Panic(t *testing.T) {
 	})
 
 	promise.
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			t.Error("Then triggered in .Catch test")
-			return nil
+			return data, nil
 		})
 
 	promise.Await()
@@ -136,8 +177,8 @@ func TestPromise_Await(t *testing.T) {
 			resolve(time.Now())
 		})
 
-		promise.Then(func(data Any) Any {
-			return data.(time.Time).Add(time.Second).Nanosecond()
+		promise.Then(func(data Any) (Any, error) {
+			return data.(time.Time).Add(time.Second).Nanosecond(), nil
 		})
 
 		promises[x] = promise
@@ -167,15 +208,15 @@ func TestPromise_Await(t *testing.T) {
 
 func TestPromise_Resolve(t *testing.T) {
 	var promise = Resolve(123).
-		Then(func(data Any) Any {
-			return data.(int) + 1
+		Then(func(data Any) (Any, error) {
+			return data.(int) + 1, nil
 		}).
-		Then(func(data Any) Any {
+		Then(func(data Any) (Any, error) {
 			t.Helper()
 			if data.(int) != 124 {
 				t.Errorf("Then resolved with unexpected value: %v", data.(int))
 			}
-			return nil
+			return nil, nil
 		})
 
 	promise.Await()
@@ -183,14 +224,14 @@ func TestPromise_Resolve(t *testing.T) {
 
 func TestPromise_Reject(t *testing.T) {
 	var promise = Reject(errors.New("rejected")).
-		Then(func(data Any) Any {
-			return data.(int) + 1
+		Then(func(data Any) (Any, error) {
+			return data.(int) + 1, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (Any, error) {
 			if err.Error() != "rejected" {
 				t.Errorf("Catch rejected with unexpected value: %v", err)
 			}
-			return nil
+			return nil, err
 		})
 
 	promise.Await()

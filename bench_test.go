@@ -23,14 +23,14 @@ func BenchmarkThen(b *testing.B) {
 		})
 
 		promise.
-			Then(func(data interface{}) interface{} {
-				return data.(int) + 1
+			Then(func(data interface{}) (interface{}, error) {
+				return data.(int) + 1, nil
 			}).
-			Then(func(data interface{}) interface{} {
-				return nil
+			Then(func(data interface{}) (interface{}, error) {
+				return nil, nil
 			}).
-			Catch(func(err error) error {
-				return nil
+			Catch(func(err error) (interface{}, error) {
+				return nil, err
 			})
 
 		promise.Await()
@@ -45,15 +45,15 @@ func BenchmarkCatch(b *testing.B) {
 		})
 
 		promise.
-			Catch(func(err error) error {
-				return nil
+			Catch(func(err error) (interface{}, error) {
+				return nil, err
 			}).
-			Catch(func(err error) error {
-				return nil
+			Catch(func(err error) (interface{}, error) {
+				return nil, err
 			})
 
-		promise.Then(func(data interface{}) interface{} {
-			return nil
+		promise.Then(func(data interface{}) (interface{}, error) {
+			return nil, nil
 		})
 
 		promise.Await()
@@ -71,8 +71,8 @@ func BenchmarkAwait(b *testing.B) {
 				resolve(time.Now())
 			})
 
-			promise.Then(func(data interface{}) interface{} {
-				return data.(time.Time).Add(time.Second).Nanosecond()
+			promise.Then(func(data interface{}) (interface{}, error) {
+				return data.(time.Time).Add(time.Second).Nanosecond(), nil
 			})
 
 			promises[x] = promise
@@ -94,11 +94,11 @@ func BenchmarkResolve(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var promise = Resolve(123).
-			Then(func(data interface{}) interface{} {
-				return data.(int) + 1
+			Then(func(data interface{}) (interface{}, error) {
+				return data.(int) + 1, nil
 			}).
-			Then(func(data interface{}) interface{} {
-				return nil
+			Then(func(data interface{}) (interface{}, error) {
+				return nil, nil
 			})
 
 		promise.Await()
@@ -109,11 +109,11 @@ func BenchmarkReject(b *testing.B) {
 	b.ReportAllocs()
 	for i := 0; i < b.N; i++ {
 		var promise = Reject(errors.New("rejected")).
-			Then(func(data interface{}) interface{} {
-				return data.(int) + 1
+			Then(func(data interface{}) (interface{}, error) {
+				return data.(int) + 1, nil
 			}).
-			Catch(func(err error) error {
-				return nil
+			Catch(func(err error) (interface{}, error) {
+				return nil, err
 			})
 
 		promise.Await()

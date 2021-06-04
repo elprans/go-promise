@@ -118,27 +118,37 @@ func (promise *Promise) handlePanic() {
 
 // Then appends fulfillment and rejection handlers to the promise,
 // and returns a new promise resolving to the return value of the called handler.
-func (promise *Promise) Then(fulfillment func(data Any) Any) *Promise {
+func (promise *Promise) Then(handler func(data Any) (Any, error)) *Promise {
 	return New(func(resolve func(Any), reject func(error)) {
 		result, err := promise.Await()
 		if err != nil {
 			reject(err)
-			return
+		} else {
+			result, err := handler(result)
+			if err != nil {
+				reject(err)
+			} else {
+				resolve(result)
+			}
 		}
-		resolve(fulfillment(result))
 	})
 }
 
 // Catch Appends a rejection handler to the promise,
 // and returns a new promise resolving to the return value of the handler.
-func (promise *Promise) Catch(rejection func(err error) error) *Promise {
+func (promise *Promise) Catch(handler func(err error) (Any, error)) *Promise {
 	return New(func(resolve func(Any), reject func(error)) {
 		result, err := promise.Await()
 		if err != nil {
-			reject(rejection(err))
-			return
+			result, err = handler(err)
+			if err != nil {
+				reject(err)
+			} else {
+				resolve(result)
+			}
+		} else {
+			resolve(result)
 		}
-		resolve(result)
 	})
 }
 
@@ -171,12 +181,12 @@ func All(promises ...*Promise) *Promise {
 
 		for index, promise := range promises {
 			func(i int) {
-				promise.Then(func(data Any) Any {
+				promise.Then(func(data Any) (Any, error) {
 					resolutionsChan <- resolutionHelper{i, data}
-					return data
-				}).Catch(func(err error) error {
+					return data, nil
+				}).Catch(func(err error) (Any, error) {
 					errorChan <- err
-					return err
+					return nil, err
 				})
 			}(index)
 		}
@@ -210,12 +220,12 @@ func Race(promises ...*Promise) *Promise {
 		errorChan := make(chan error, psLen)
 
 		for _, promise := range promises {
-			promise.Then(func(data Any) Any {
+			promise.Then(func(data Any) (Any, error) {
 				resolutionsChan <- data
-				return data
-			}).Catch(func(err error) error {
+				return data, nil
+			}).Catch(func(err error) (Any, error) {
 				errorChan <- err
-				return err
+				return nil, err
 			})
 		}
 
@@ -243,12 +253,12 @@ func AllSettled(promises ...*Promise) *Promise {
 
 		for index, promise := range promises {
 			func(i int) {
-				promise.Then(func(data Any) Any {
+				promise.Then(func(data Any) (Any, error) {
 					resolutionsChan <- resolutionHelper{i, data}
-					return data
-				}).Catch(func(err error) error {
+					return data, nil
+				}).Catch(func(err error) (Any, error) {
 					resolutionsChan <- resolutionHelper{i, err}
-					return err
+					return nil, err
 				})
 			}(index)
 		}

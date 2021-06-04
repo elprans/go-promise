@@ -1,7 +1,4 @@
 # PROMISE
-[![Go Report Card](https://goreportcard.com/badge/github.com/chebyrash/promise)](https://goreportcard.com/report/github.com/chebyrash/promise)
-[![Build Status](https://travis-ci.org/chebyrash/promise.svg?branch=master)](https://travis-ci.org/chebyrash/promise)
-[![Go Reference](https://pkg.go.dev/badge/github.com/chebyrash/promise.svg)](https://pkg.go.dev/github.com/chebyrash/promise)
 
 ## About
 Promises library for Golang. Inspired by [JS Promises](https://developer.mozilla.org/en-US/docs/Web/JavaScript/Reference/Global_Objects/Promise)
@@ -18,7 +15,7 @@ Supports:
 
 ## Install
 
-    $ go get -u github.com/chebyrash/promise
+    $ go get -u github.com/elprans/go-promise
 
 ## Quick Start
 ```go
@@ -44,21 +41,21 @@ var p = promise.New(func(resolve func(promise.Any), reject func(error)) {
 }).
   // You may continue working with the result of
   // a previous async operation.
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     fmt.Println("The result is:", data)
-    return data.(int) + 1
+    return data.(int) + 1, nil
   }).
 
   // Handlers can be added even after the success or failure of the asynchronous operation.
   // Multiple handlers may be added by calling .Then or .Catch several times,
   // to be executed independently in insertion order.
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     fmt.Println("The new result is:", data)
-    return nil
+    return nil, nil
   }).
-  Catch(func(err error) error {
+  Catch(func(err error) (promise.Any, error) {
     fmt.Println("Error during execution:", err.Error())
-    return nil
+    return nil, nil
   })
 
 // Since handlers are executed asynchronously you can wait for them.
@@ -150,7 +147,7 @@ fmt.Println(err)
 
 ## Examples
 
-### [HTTP Request](https://github.com/chebyrash/promise/blob/master/examples/http_request/main.go)
+### [HTTP Request](https://github.com/elprans/go-promise/blob/master/examples/http_request/main.go)
 ```go
 var requestPromise = promise.New(func(resolve func(promise.Any), reject func(error)) {
   resp, err := http.Get("https://httpbin.org/ip")
@@ -170,9 +167,9 @@ var requestPromise = promise.New(func(resolve func(promise.Any), reject func(err
 
 // Parse JSON body in async manner
 parsed, err := requestPromise.
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     // This can be a promise, it will automatically flatten
-    return parseJSON(data.([]byte))
+    return parseJSON(data.([]byte)), nil
   }).Await()
 
 if err != nil {
@@ -184,7 +181,7 @@ origin := parsed.(map[string]string)["origin"]
 fmt.Printf("Origin: %s\n", origin)
 ```
 
-### [Finding Factorial](https://github.com/chebyrash/promise/blob/master/examples/factorial/main.go)
+### [Finding Factorial](https://github.com/elprans/go-promise/blob/master/examples/factorial/main.go)
 
 ```go
 func findFactorial(n int) int {
@@ -213,20 +210,20 @@ func main() {
 }
 ```
 
-### [Chaining](https://github.com/Chebyrash/promise/blob/master/examples/http_request/main.go)
+### [Chaining](https://github.com/elprans/go-promise/blob/master/examples/http_request/main.go)
 ```go
 var p = promise.Resolve(nil).
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     fmt.Println("I will execute first")
-    return nil
+    return nil, nil
   }).
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     fmt.Println("And I will execute second!")
-    return nil
+    return nil, nil
   }).
-  Then(func(data promise.Any) promise.Any {
+  Then(func(data promise.Any) (promise.Any, error) {
     fmt.Println("Oh I'm last :(")
-    return nil
+    return nil, nil
   })
 
 p.Await()

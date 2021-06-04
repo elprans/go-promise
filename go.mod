@@ -1,3 +1,3 @@
-module github.com/chebyrash/promise
+module github.com/elprans/go-promise
 
 go 1.14

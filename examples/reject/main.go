@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chebyrash/promise"
+	"github.com/elprans/go-promise"
 )
 
 func main() {

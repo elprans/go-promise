@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/chebyrash/promise"
+	"github.com/elprans/go-promise"
 )
 
 func main() {
@@ -30,21 +30,21 @@ func main() {
 	}).
 		// You may continue working with the result of
 		// a previous async operation.
-		Then(func(data promise.Any) promise.Any {
+		Then(func(data promise.Any) (promise.Any, error) {
 			fmt.Println("The result is:", data)
-			return data.(int) + 1
+			return data.(int) + 1, nil
 		}).
 
 		// Handlers can be added even after the success or failure of the asynchronous operation.
 		// Multiple handlers may be added by calling .Then or .Catch several times,
 		// to be executed independently in insertion order.
-		Then(func(data promise.Any) promise.Any {
+		Then(func(data promise.Any) (promise.Any, error) {
 			fmt.Println("The new result is:", data)
-			return nil
+			return nil, nil
 		}).
-		Catch(func(err error) error {
+		Catch(func(err error) (promise.Any, error) {
 			fmt.Println("Error during execution:", err.Error())
-			return nil
+			return nil, err
 		})
 
 	// Since handlers are executed asynchronously you can wait for them.
